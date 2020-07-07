@@ -7,6 +7,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Configuration;
+using TaksNet.Models;
 
 namespace TaksNet
 {
@@ -18,6 +19,22 @@ namespace TaksNet
 
         static void Main(string[] args)
         {
+            using (var db = new EmployeeContext())
+            {
+                var e = new Employee()
+                {
+                    Id = Guid.NewGuid(),
+                    ChangeDate = DateTimeOffset.Now,
+                    City = "C",
+                    Email = "asd",
+                    FullName = "abc",
+                    Phone = "111"
+                };
+
+                db.Employees.Add(e);
+                db.SaveChanges();
+            }
+
             var threadsCount = int.Parse(ConfigurationManager.AppSettings.Get("ThreadsCount"));
 
             Log.Logger = new LoggerConfiguration()
