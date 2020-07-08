@@ -106,9 +106,10 @@ namespace TaksNet
                         cts.Cancel();
                         Log.Information("Tasks are canceled!");
                     }
+                    Log.Information("Shutdown application...");
+                    Environment.Exit(0);
                 }
-                Log.Information("Shutdown application...");
-                Environment.Exit(0);
+
             }
         }
 
@@ -129,7 +130,7 @@ namespace TaksNet
                             if (emp1 == null)
                             {
                                 db.Employees.Add(emp);
-                                Log.Information($"Added new record with Id = {emp.Id}");
+                                Log.Information($"Added new record with Id = {emp.Id} by threadId = {Thread.CurrentThread.ManagedThreadId}");
                             }
                             else
                             {
@@ -138,7 +139,7 @@ namespace TaksNet
                                 {
                                     //emp1 = emp;
                                     db.Employees.AddOrUpdate(emp);
-                                    Log.Information($"Record with Id = {emp.Id} has updated");
+                                    Log.Information($"Record with Id = {emp.Id} has updated by threadId = {Thread.CurrentThread.ManagedThreadId}");
                                     //db.Entry(emp1).CurrentValues.SetValues(emp);
                                 }
                             }
