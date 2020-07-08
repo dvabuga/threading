@@ -20,6 +20,8 @@ namespace TaksNet
         public static volatile int Skip = 0;
         static object locker = new object();
         public static volatile int LineCount;
+        public static CancellationTokenSource cts;
+        public static bool WaitForShutdownCommand = true;
 
         static void Main(string[] args)
         {
@@ -39,6 +41,8 @@ namespace TaksNet
             //    db.SaveChanges();
             //}
 
+
+            cts = new CancellationTokenSource();
             var threadsCount = int.Parse(ConfigurationManager.AppSettings.Get("ThreadsCount"));
 
             Log.Logger = new LoggerConfiguration()
@@ -54,11 +58,13 @@ namespace TaksNet
 
             for (int i = 0; i < threadsCount; i++)
             {
-                var LastTask = new Task(() => Count());
+                var LastTask = new Task(() => Count(), cts.Token);
                 LastTask.Start();
                 tasks.Add(LastTask);
             }
 
+            var shutdownTask = new Task(() => WaitShutDownCommand(), cts.Token);
+            shutdownTask.Start();
 
             Task.WaitAll(tasks.ToArray());
 
@@ -68,8 +74,6 @@ namespace TaksNet
             //    myThread.Name = "Поток " + i.ToString();
             //    myThread.Start();
             //}
-
-
 
 
             //string[] AllLines = File.ReadAllLines(@"L:\Code\TaskNet\TaksNet\TaksNet\bin\Debug\task.txt");
@@ -88,6 +92,26 @@ namespace TaksNet
 
             Console.ReadLine();
         }
+
+
+        public static void WaitShutDownCommand()
+        {
+            while (true)
+            {
+                if (Console.ReadKey(true).Key == ConsoleKey.Escape)
+                {
+                    //Console.WriteLine("Escape pressed!");
+                    if (cts != null)
+                    {
+                        cts.Cancel();
+                        Log.Information("Tasks are canceled!");
+                    }
+                }
+                Log.Information("Shutdown application...");
+                Environment.Exit(0);
+            }
+        }
+
 
         public static void Count()
         {
