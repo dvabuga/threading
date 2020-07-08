@@ -8,6 +8,9 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Configuration;
 using TaksNet.Models;
+using Newtonsoft.Json;
+using System.Runtime.InteropServices;
+using System.Data.Entity.Migrations;
 
 namespace TaksNet
 {
@@ -19,41 +22,55 @@ namespace TaksNet
 
         static void Main(string[] args)
         {
-            using (var db = new EmployeeContext())
-            {
-                var e = new Employee()
-                {
-                    Id = Guid.NewGuid(),
-                    ChangeDate = DateTimeOffset.Now,
-                    City = "C",
-                    Email = "asd",
-                    FullName = "abc",
-                    Phone = "111"
-                };
+            //using (var db = new EmployeeContext())
+            //{
+            //    var e = new Employee()
+            //    {
+            //        Id = Guid.NewGuid(),
+            //        ChangeDate = DateTimeOffset.Now,
+            //        City = "C",
+            //        Email = "asd",
+            //        FullName = "abc",
+            //        Phone = "111"
+            //    };
 
-                db.Employees.Add(e);
-                db.SaveChanges();
-            }
+            //    db.Employees.Add(e);
+            //    db.SaveChanges();
+            //}
 
             var threadsCount = int.Parse(ConfigurationManager.AppSettings.Get("ThreadsCount"));
 
             Log.Logger = new LoggerConfiguration()
                 .MinimumLevel.Debug()
                 .WriteTo.Console()
-                .WriteTo.File("myapp.txt")
+                // .WriteTo.File("myapp.txt")
                 .CreateLogger();
 
             Log.Information("App started");
 
-            LineCount = File.ReadLines(@"L:\Code\TaskNet\TaksNet\TaksNet\bin\Debug\task.txt", Encoding.Default).Count();
+            LineCount = File.ReadLines(@"L:\Code\task.txt", Encoding.Default).Count();
 
+            var tasks = new List<Task>();
 
             for (int i = 0; i < threadsCount; i++)
             {
-                Thread myThread = new Thread(Count);
-                myThread.Name = "Поток " + i.ToString();
-                myThread.Start();
+                var LastTask = new Task(() => Count());
+                LastTask.Start();
+                tasks.Add(LastTask);
             }
+
+
+            Task.WaitAll(tasks.ToArray());
+
+            //for (int i = 0; i < threadsCount; i++)
+            //{
+            //    Thread myThread = new Thread(Count);
+            //    myThread.Name = "Поток " + i.ToString();
+            //    myThread.Start();
+            //}
+
+
+
 
             //string[] AllLines = File.ReadAllLines(@"L:\Code\TaskNet\TaksNet\TaksNet\bin\Debug\task.txt");
             //Parallel.For(0, AllLines.Length,  x =>
@@ -81,10 +98,33 @@ namespace TaksNet
                 {
                     if (LineCount != 0)
                     {
-                        var line = File.ReadLines(@"L:\Code\TaskNet\TaksNet\TaksNet\bin\Debug\task.txt", Encoding.Default).Skip(Skip).Take(1).First();
-                        Console.WriteLine(line);
-                        var t = Thread.CurrentThread.ManagedThreadId;
-                        Console.WriteLine(t);
+                        var line = File.ReadLines(@"L:\Code\task.txt", Encoding.Default).Skip(Skip).Take(1).First();
+                        var emp = JsonConvert.DeserializeObject<Employee>(line);
+                        using (var db = new EmployeeContext())
+                        {
+                            var emp1 = db.Employees.Where(c => c.Id == emp.Id).FirstOrDefault();
+                            if (emp1 == null)
+                            {
+                                db.Employees.Add(emp);
+                            }
+                            else
+                            {
+                                var d = DateTimeOffset.Compare(emp.ChangeDate, emp1.ChangeDate);
+                                if (d > 0)
+                                {
+                                    //emp1 = emp;
+                                    db.Employees.AddOrUpdate(emp);
+                                    //db.Entry(emp1).CurrentValues.SetValues(emp);
+                                }
+                            }
+
+                            db.SaveChanges();
+                        }
+                        Log.Information($"Employee with {emp.Id} added to db by threadId = {Thread.CurrentThread.ManagedThreadId}");
+
+                        //Console.WriteLine(line);
+                        //var t = Thread.CurrentThread.ManagedThreadId;
+                        //Console.WriteLine(t);
                         LineCount--;
                         Skip++;
                     }
