@@ -11,6 +11,7 @@ using TaksNet.Models;
 using Newtonsoft.Json;
 using System.Runtime.InteropServices;
 using System.Data.Entity.Migrations;
+using Serilog.Events;
 
 namespace TaksNet
 {
@@ -42,11 +43,10 @@ namespace TaksNet
 
             Log.Logger = new LoggerConfiguration()
                 .MinimumLevel.Debug()
+                //.MinimumLevel.Override("Microsoft", LogEventLevel.Information)
                 .WriteTo.Console()
-                // .WriteTo.File("myapp.txt")
+                .WriteTo.File("log_.txt")
                 .CreateLogger();
-
-            Log.Information("App started");
 
             LineCount = File.ReadLines(@"L:\Code\task.txt", Encoding.Default).Count();
 
@@ -86,7 +86,6 @@ namespace TaksNet
 
             //}
 
-
             Console.ReadLine();
         }
 
@@ -106,6 +105,7 @@ namespace TaksNet
                             if (emp1 == null)
                             {
                                 db.Employees.Add(emp);
+                                Log.Information($"Added new record with Id = {emp.Id}");
                             }
                             else
                             {
@@ -114,13 +114,14 @@ namespace TaksNet
                                 {
                                     //emp1 = emp;
                                     db.Employees.AddOrUpdate(emp);
+                                    Log.Information($"Record with Id = {emp.Id} has updated");
                                     //db.Entry(emp1).CurrentValues.SetValues(emp);
                                 }
                             }
 
                             db.SaveChanges();
                         }
-                        Log.Information($"Employee with {emp.Id} added to db by threadId = {Thread.CurrentThread.ManagedThreadId}");
+                        //Log.Information($"Employee with {emp.Id} added to db by threadId = {Thread.CurrentThread.ManagedThreadId}");
 
                         //Console.WriteLine(line);
                         //var t = Thread.CurrentThread.ManagedThreadId;
