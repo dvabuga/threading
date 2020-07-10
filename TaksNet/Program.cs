@@ -21,7 +21,7 @@ namespace TaksNet
         static volatile int Skip = 0;
         static object locker = new object();
         static CancellationTokenSource cts;
-        static readonly string PathToFile = @"..\..\task.txt";
+        static readonly string PathToFile = @"..\..\TestData.txt";
 
         static void Main(string[] args)
         {
@@ -31,7 +31,7 @@ namespace TaksNet
             Log.Logger = new LoggerConfiguration()
                 .MinimumLevel.Debug()
                 .WriteTo.Console()
-                .WriteTo.File("log_.txt")
+                .WriteTo.File($"log_file.txt")
                 .CreateLogger();
 
             LineCount = File.ReadLines(PathToFile, Encoding.Default).Count();
